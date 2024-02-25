@@ -1,25 +1,40 @@
 import { useState, useEffect } from 'react';
+import Error from './error';
 
-const Formulario = ({pacientes, setPacientes}) => {
+const Formulario = ({pacientes, setPacientes, paciente, setPaciente}) => {
   
   const [nombre, setNombre] = useState('');
   const [propietario, setPropietario] = useState('');
   const [email, setEmail] = useState('');
   const [fecha, setFecha] = useState(new Date());
   const [sintomas, setSintomas] = useState('');
+  const [modeEdit, setmodeEdit] = useState(false);
 
   const [error, setError] = useState(false);
 
+  useEffect(() => {
+    if( Object.keys(paciente).length > 0){
+      setmodeEdit(true)
+      
+      const {nombre, propietario, email, fecha, sintomas} = paciente;
+  
+      setNombre(nombre);
+      setPropietario(propietario);
+      setEmail(email);
+      setFecha(fecha);
+      setSintomas(sintomas);
+    }
+  }, [paciente])
+
+  const generarId = () => {
+    const random = Math.random().toString(36).substring(2);
+    const fecha = Date.now().toString(36);
+
+    return random + fecha;
+  }
+
   const handlerSubmit = (e) => {
     e.preventDefault();
-
-    if([nombre, propietario, email, fecha, sintomas].includes('')){
-      console.log("Hay campos vacios")
-      setError(true);
-    } else {
-      setError(false)
-      console.log("Todos los campos estan llenos")
-    }
 
     const ObjetoPaciente = {
       nombre, 
@@ -29,9 +44,37 @@ const Formulario = ({pacientes, setPacientes}) => {
       sintomas
     }
 
-    setPacientes([...pacientes, ObjetoPaciente]);
+      if(modeEdit){
+        // Editando
+        ObjetoPaciente.id = paciente.id;
 
-    console.log("Enviando formulario")
+        const pacientesActualizados = pacientes.map( pacienteState => pacienteState.id === paciente.id ? ObjetoPaciente : pacienteState)
+
+        setPacientes(pacientesActualizados)
+        setPaciente({})
+
+      } else {
+        // Nuevo registro
+
+        if([nombre, propietario, email, fecha, sintomas].includes('')){
+          console.log("Hay campos vacios")
+          setError(true);
+        } else {
+          setError(false)
+          ObjetoPaciente.id = generarId();
+          //Toma la copia de array de pacientes y le añade el nuevo objeto de pacientes
+          setPacientes([...pacientes, ObjetoPaciente]);
+          console.log("Todos los campos estan llenos")
+        }
+      }
+
+      setNombre('');
+      setPropietario('');
+      setEmail('');
+      setFecha('');
+      setSintomas('');
+      setmodeEdit(false)
+
   }
 
   return (
@@ -44,11 +87,7 @@ const Formulario = ({pacientes, setPacientes}) => {
 
 
       <form onSubmit={handlerSubmit} className="bg-white shadow-md rounded-lg py-10 px-5 mb-1" >
-      {error && (
-        <div className="bg-red-800 text-white text-center p-3 uppercase font-bold mb-3 rounded-md">
-          <p>Todos los campos son obligatorios</p>
-        </div>
-      )}
+      {error && <Error>Todos los campos son obligatorios</Error>}
         <div className="mb-5">
           <label htmlFor="mascota" className="block text-gray-700 uppercase font-bold">
             Nombre Mascota
@@ -113,8 +152,8 @@ const Formulario = ({pacientes, setPacientes}) => {
 
         <input 
         type="submit"
-        className="bg-indigo-600 w-full p-3 text-white uppercase font-bold hover:bg-indigo-700 cursor-pointer transition-colors"
-        value={'Agregar paciente'}/>
+        className="bg-indigo-600 w-full p-3 mb-3 text-white uppercase font-bold hover:bg-indigo-700 cursor-pointer transition-colors"
+        value={modeEdit ? "Guardar cambios" : "agregar paciente"}/>
 
       </form>
     </div>
